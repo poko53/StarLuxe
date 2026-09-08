@@ -402,9 +402,12 @@ if __name__ == "__main__":
             download_update(result_update["url"])
 
     #! Hard‑Coded
-    if not result_system["status"] and result_system["message"].strip().lower().count("shaders folder not found!") == 1:
-        def download_task(progress_callback):
-            return download_dependencies(settings["Packages"]["download_dir"], progress_callback)
-        DownloadDialog(app, "Downloading Dependencies", True, download_task)
-    
+    if not result_system["status"]:
+        msg = result_system["message"].strip().lower()
+
+        if msg.count("shaders folder not found!") == 1:
+            def download_task(progress_callback):
+                return download_dependencies(settings["Packages"]["download_dir"], progress_callback)
+            DownloadDialog(app, "Downloading Dependencies", True, download_task)
+
     app.mainloop()
