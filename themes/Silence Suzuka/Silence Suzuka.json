@@ -1,7 +1,7 @@
 {
   "custom_colors": {
     "primary_color": ["#27AE60", "#27AE60"],
-    "secondary_color": ["#E67E22", "#E67E22"],
+    "secondary_color": ["#1ABC9C", "#1ABC9C"],
     "accent_color": ["#27AE60", "#27AE60"]
   },
   "CTk": {
