@@ -3,7 +3,7 @@
 from tkinter import *
 from tkinter import filedialog
 import customtkinter as ctk
-import os, sys, logging
+import os, sys, logging, configparser
 from utils.config import save_config, delete_config
 from utils.path import resource_path
 from utils.injector import ReshadeSetup
@@ -139,6 +139,42 @@ class AppFrame(ctk.CTkFrame):
         self.browser_button.configure(width=123, height=38, corner_radius=8, state="disabled", fg_color="#222222")
         self.browser_button.grid(row=8, column=1, padx=(0, 20), pady=5, sticky="w")
 
+        # --- ReShade Keybind Settings ---
+        self.keybinds = {
+            "Insert": "45,0,0,0",
+            "Delete": "46,0,0,0",
+            "Home": "36,0,0,0",
+            "PageUp": "33,0,0,0",
+            "PageDown": "34,0,0,0",
+            "F10": "121,0,0,0"
+        }
+        
+        current_key = "Insert" # Default
+        ini_path = resource_path(self.settings["Script"]["reshade_file"])
+        if os.path.exists(ini_path):
+            try:
+                ini = configparser.ConfigParser()
+                ini.optionxform = str
+                ini.read(ini_path)
+                if ini.has_section("INPUT") and ini.has_option("INPUT", "KeyOverlay"):
+                    current_code = ini.get("INPUT", "KeyOverlay")
+                    for k, v in self.keybinds.items():
+                        if v == current_code:
+                            current_key = k
+                            break
+            except Exception as e:
+                logger.error(f"Failed to read ReShade.ini for keybinds: {e}")
+
+        self.key_var = ctk.StringVar(value=current_key)
+
+        self.key_label = ctk.CTkLabel(self, text="ReShade Menu Key", font=ctk.CTkFont(size=18))
+        self.key_label.grid(row=9, column=0, padx=25, pady=(15, 5), sticky="w")
+
+        self.key_option = ctk.CTkOptionMenu(self, width=180, height=36, font=ctk.CTkFont(family="Verdana", size=14), dropdown_font=ctk.CTkFont(family="Verdana", size=12), values=list(self.keybinds.keys()), variable=self.key_var)
+        self.key_option.grid(row=10, column=0, padx=25, pady=5, sticky="w")
+        StyledToolTip(self.key_option, message="Select the key used to open the ReShade menu in-game.")
+        # --------------------------------
+
         self.switch_toogle_xxmi()
     
     def switch_toogle_xxmi(self):
@@ -228,6 +264,26 @@ class SettingsDialog(ctk.CTkToplevel):
         if self.settings["Launcher"]["gui_theme"] != theme_options:
             self.settings["Launcher"]["gui_theme"] = theme_options
             StyledPopup(message="Restart required to apply theme!")
+
+        # --- ReShade Keybind Update Logic ---
+        ini_path = resource_path(self.settings["Script"]["reshade_file"])
+        if os.path.exists(ini_path):
+            try:
+                ini = configparser.ConfigParser()
+                ini.optionxform = str
+                ini.read(ini_path)
+                
+                if not ini.has_section("INPUT"):
+                    ini.add_section("INPUT")
+                    
+                selected_key_code = self.app_content_frame.keybinds[self.app_content_frame.key_var.get()]
+                ini.set("INPUT", "KeyOverlay", selected_key_code)
+                
+                with open(ini_path, "w") as f:
+                    ini.write(f)
+            except Exception as e:
+                logger.error(f"Failed to update ReShade.ini keybind: {e}")
+        # ------------------------------------
 
         setup_system = ReshadeSetup(self.settings, "", xxmi_enabled)
         result_system = setup_system.verify_system()
